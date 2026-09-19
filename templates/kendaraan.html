@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Kendaraan · ParkirPlat{% endblock %}
+{% block content %}
+<section class="wide">
+  <h1>Kendaraan terdaftar</h1>
+  {% if not rows %}<p class="lead">Belum ada pendaftaran. Bagikan halaman Daftar motor ke pengunjung.</p>{% else %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Plat</th><th>Pemilik</th><th>No. HP</th><th>STNK</th><th>Didaftarkan</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+      {% for v in rows %}
+        <tr>
+          <td><span class="plate mini">{{ v.plate|plate }}</span></td>
+          <td>{{ v.owner_name }}</td>
+          <td>{{ v.phone or '–' }}</td>
+          <td class="thumbs"><a href="/media/{{ v.stnk_photo }}" target="_blank"><img src="/media/{{ v.stnk_photo }}" alt="Foto STNK"></a></td>
+          <td>{{ v.created_at }}</td>
+          <td><span class="badge {{ 'done' if v.verified else 'review' }}">{{ 'Terverifikasi' if v.verified else 'Menunggu' }}</span></td>
+          <td>
+            <form method="post" action="/kendaraan/{{ v.id }}/verifikasi" class="inline">
+              <button class="btn sm {{ '' if v.verified else 'ok' }}">{{ 'Cabut verifikasi' if v.verified else 'Verifikasi' }}</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}
+{% block scripts %}<script src="/static/alerts.js"></script>{% endblock %}

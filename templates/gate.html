@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Gerbang · ParkirPlat{% endblock %}
+{% block content %}
+<section class="gate">
+  <div class="cam">
+    <div class="seg" role="group" aria-label="Mode gerbang">
+      <button id="m-in" type="button" class="on" aria-pressed="true">Masuk</button>
+      <button id="m-out" type="button" aria-pressed="false">Keluar</button>
+    </div>
+    <video id="video" autoplay playsinline muted></video>
+    <div class="row">
+      <label class="check"><input type="checkbox" id="auto" checked> Scan otomatis tiap 1,5 detik</label>
+      <button class="btn" id="scan" type="button">Scan sekarang</button>
+    </div>
+    <form id="manual" class="row">
+      <input class="plate-input small" id="plate" placeholder="Ketik plat kalau kamera gagal" maxlength="12" autocapitalize="characters" autocomplete="off">
+      <button class="btn">Proses</button>
+    </form>
+  </div>
+
+  <div id="panel" class="result idle" aria-live="polite">
+    <div class="status" id="status">Arahkan plat ke kamera</div>
+    <div class="plate" id="rplate" hidden></div>
+    <p class="owner" id="rowner"></p>
+    <p id="rmsg"></p>
+    <div id="photos" class="photos" hidden>
+      <figure><img id="pin" alt="Foto saat masuk"><figcaption>Masuk</figcaption></figure>
+      <figure><img id="pout" alt="Foto saat keluar"><figcaption>Keluar</figcaption></figure>
+    </div>
+    <div id="decide" class="row" hidden>
+      <button class="btn ok" type="button" data-a="izinkan">Izinkan keluar</button>
+      <button class="btn bad" type="button" data-a="tahan">Tahan motor</button>
+      <button class="btn" type="button" data-a="lanjut">Lanjut scan</button>
+    </div>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="/static/alerts.js"></script>
+<script src="/static/gate.js"></script>
+{% endblock %}

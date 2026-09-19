@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Riwayat · ParkirPlat{% endblock %}
+{% block content %}
+<section class="wide">
+  <h1>Riwayat masuk dan keluar</h1>
+  {% if not rows %}<p class="lead">Belum ada catatan. Scan plat di halaman Gerbang untuk memulai.</p>{% else %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Plat</th><th>Pemilik</th><th>Masuk</th><th>Keluar</th><th>Foto</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+      {% for s in rows %}
+        <tr {% if s.status == 'ALERT' %}class="is-alert"{% endif %}>
+          <td><span class="plate mini">{{ s.plate|plate }}</span></td>
+          <td>{{ s.owner_name }}</td>
+          <td>{{ s.entry_time }}</td>
+          <td>{{ s.exit_time or '–' }}</td>
+          <td class="thumbs">
+            {% set ep = s.entry_face or s.entry_photo %}{% set xp = s.exit_face or s.exit_photo %}
+            {% if ep %}<a href="/media/{{ ep }}" target="_blank"><img src="/media/{{ ep }}" alt="Foto saat masuk"></a>{% endif %}
+            {% if xp %}<a href="/media/{{ xp }}" target="_blank"><img src="/media/{{ xp }}" alt="Foto saat keluar"></a>{% endif %}
+          </td>
+          <td><span class="badge {{ s.status|lower }}">{{ labels[s.status] }}</span>{% if s.note %}<small>{{ s.note }}</small>{% endif %}</td>
+          <td>
+            {% if s.status in ('REVIEW', 'HELD', 'ALERT') %}
+            <form method="post" action="/riwayat/{{ s.id }}/putuskan" class="inline">
+              <button class="btn ok sm" name="aksi" value="izinkan">{{ 'Orang sama, izinkan' if s.status == 'ALERT' else 'Izinkan keluar' }}</button>
+              {% if s.status in ('REVIEW', 'ALERT') %}<button class="btn bad sm" name="aksi" value="tahan">Tahan motor</button>{% endif %}
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}
+{% block scripts %}<script src="/static/alerts.js"></script>{% endblock %}
