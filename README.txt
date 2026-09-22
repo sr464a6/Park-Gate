@@ -1,80 +1,414 @@
-Smart Parking - PWA (Progressive Web App) untuk Mobile
-========================================================
-Update: OTP dikirim gaya WhatsApp + notifikasi pop-up asli + UI netral
-(tanpa jam/baterai/sinyal palsu) supaya enak dilihat di semua merk HP.
+# Park Gate
 
-INI BUKAN FILE .APK. Environment ini tidak bisa compile APK asli karena
-butuh Android SDK/Gradle dari server Google yang aksesnya diblokir di sini.
-Sebagai gantinya ini PWA: web app yang BISA DIINSTAL ke HP seperti app biasa
-(ikon di Home Screen, full-screen, jalan offline).
+### Smart Parking & Vehicle Access System
 
-APA YANG BERUBAH DARI VERSI SEBELUMNYA:
-1. OTP via WhatsApp (simulasi):
-   - Setelah isi nomor HP, klik "Lanjut" -> sistem "mengirim" OTP.
-   - Muncul notifikasi pop-up asli di HP (gaya pesan WhatsApp) berisi kode.
-   - Di layar OTP juga ada bubble hijau ala WhatsApp yang nampilin kodenya,
-     buat jaga-jaga kalau user belum kasih izin notifikasi.
-   - (Catatan jujur: ini simulasi visual, bukan kirim WA sungguhan ke nomor
-     asli — WA Business API perlu server & akses yang tidak tersedia di
-     environment ini. Kalau nanti backend sudah ada, tinggal ganti fungsi
-     sendOtpViaWhatsApp() di index.html supaya call API WA beneran.)
+ParkSense is a smart parking system designed to integrate a mobile user application with IoT-based parking gates.
 
-2. UI dibersihkan dari elemen palsu:
-   - Baris jam/baterai/sinyal (status bar tiruan) DIHAPUS — HP kamu sudah
-     punya status bar asli sendiri, jadi tidak akan bentrok tampilan gaya
-     iPhone/Android tertentu. Tampilan jadi netral, enak dipakai di semua
-     merk HP.
-   - "Notch" hitam ala iPhone juga dihapus.
-   - Ditambah padding "safe area" otomatis biar konten tidak ketiban
-     notch/status bar di HP model apapun.
+The system allows registered users to manage their vehicles, monitor parking activity, receive parking notifications, and authorize vehicle exits through the mobile application.
 
-3. Notifikasi pop-up ASLI (bukan cuma tampil di menu Notifikasi dalam app):
-   - Saat "Simulasikan: Kendaraan Ingin Keluar", "Pembayaran", dan
-     "Gerbang terbuka" ditekan, aplikasi memicu Notification API asli.
-   - Notifikasi ini muncul sebagai pop-up sistem (banner/tray) walau kamu
-     lagi di Home Screen HP / app di-minimize — SELAMA app/tab masih
-     berjalan di background (baru saja diminimize, browser belum
-     benar-benar mematikannya).
-   - Tap notifikasinya akan membuka app langsung ke layar terkait
-     (misalnya notifikasi "Kendaraan Ingin Keluar" langsung ke layar
-     Login PIN -> Persetujuan Keluar).
-   - Wajib izinkan permission notifikasi saat pertama buka (tombol
-     "Mulai" di splash screen akan minta izin ini).
+The project is designed to support multiple parking gates and connect them through a centralized backend.
 
-   BATASAN JUJUR: kalau app sudah benar-benar ditutup total / HP dimatikan
-   layarnya lama, notifikasi "server-push" yang tetap muncul butuh backend
-   push server sungguhan (mis. Firebase Cloud Messaging) yang device-nya
-   terdaftar — itu di luar batas prototype front-end ini. Yang sudah
-   berjalan sekarang: notifikasi asli muncul selama app baru saja dibuka/
-   di-background-kan, cukup untuk demo ke klien/stakeholder.
+---
 
-CARA INSTALL DI HP (Android/iOS, semua merk):
-1. Upload folder ini ke hosting HTTPS apa saja — paling gampang:
-   buka app.netlify.com/drop lalu drag & drop folder ini.
-2. Buka link hasil hosting itu di Chrome (Android) atau Safari (iPhone).
-3. Chrome: menu titik tiga -> "Install app" / "Tambah ke layar Utama".
-   Safari (iOS): tombol Share -> "Add to Home Screen".
-4. Ikon "Smart Parking" muncul di Home Screen, buka full-screen tanpa
-   address bar seperti app native.
-5. Izinkan permission notifikasi saat diminta di layar awal ("Mulai").
+## Features
 
-OPSI COBA CEPAT VIA WIFI LOKAL (tanpa hosting):
-1. Di komputer, masuk folder ini lalu jalankan:
-     python3 -m http.server 8000
-2. Di HP (WiFi sama), buka: http://<IP-komputer>:8000/index.html
-3. Lakukan "Add to Home Screen" dari menu browser.
+### User Authentication
 
-CATATAN:
-- Membuka index.html langsung dari file:// tetap bisa dilihat tampilannya,
-  tapi "Install/Add to Home Screen", notifikasi pop-up, dan offline cache
-  butuh diakses lewat http:// atau https://.
-- Kalau butuh .apk asli (native Android) untuk upload ke Play Store, langkah
-  selanjutnya: bungkus PWA ini pakai Bubblewrap / PWABuilder.com / Capacitor
-  — itu perlu dijalankan di komputer kamu sendiri (butuh Android SDK). Bilang
-  aja kalau mau saya siapkan source project-nya.
+* Phone number registration
+* OTP verification
+* PIN creation
+* PIN-based login
 
-Isi folder:
-- index.html   -> seluruh aplikasi (semua screen + logic)
-- manifest.json -> metadata PWA (nama, ikon, warna tema)
-- sw.js         -> service worker (offline cache + handle klik notifikasi)
-- icons/        -> ikon app (192x192, 512x512)
+No email or password is required for the main authentication flow.
+
+---
+
+### Vehicle Management
+
+Users can register multiple vehicles.
+
+Supported vehicle types:
+
+* Motorcycle
+* Car
+* Truck
+* Bus
+
+Vehicle registration uses an STNK scanning flow:
+
+```text
+Scan STNK
+   ↓
+Automatic Capture
+   ↓
+Read STNK Data
+   ↓
+Confirm Data
+   ↓
+Save / Retake
+```
+
+The application can retrieve vehicle information such as:
+
+* License plate number
+* Owner name
+* Address
+* Vehicle brand/type
+* Vehicle color
+* STNK information
+
+---
+
+## Parking Monitoring
+
+The mobile application provides a simple parking activity list directly on the Home screen.
+
+Each parking record contains:
+
+* Vehicle
+* License plate
+* Date
+* Entry time
+* Exit time
+* Entry photo
+* Exit photo
+
+Example:
+
+```text
+Honda Beat
+L 1234 XX
+22 September 2026
+
+Entry : 08:15   [View Photo]
+Exit  : 17:30   [View Photo]
+```
+
+Parking photos are not displayed automatically. Users can view them by selecting the corresponding **View Photo** button.
+
+Parking fees are not displayed in the parking activity log.
+
+---
+
+## Parking Entry Flow
+
+The user does not need to open the mobile application when entering the parking area.
+
+```text
+Vehicle Arrives
+      ↓
+Vehicle Sensor Detects Vehicle
+      ↓
+ANPR Reads License Plate
+      ↓
+User Enters PIN on Gate
+      ↓
+Backend Validates Vehicle + PIN
+      ↓
+CCTV Captures Entry Documentation
+      ↓
+Entry Session Created
+      ↓
+Barrier Opens
+      ↓
+Push Notification Sent
+```
+
+The system records the entry time and the Gate ID used by the vehicle.
+
+---
+
+## Parking Exit Flow
+
+The exit process requires authorization from the vehicle owner.
+
+```text
+Vehicle Arrives at Exit Gate
+          ↓
+Vehicle Sensor Detects Vehicle
+          ↓
+ANPR Reads License Plate
+          ↓
+User Enters PIN on Gate
+          ↓
+Active Parking Session Found
+          ↓
+Notification Sent to Mobile App
+          ↓
+User Opens App
+          ↓
+PIN Login
+          ↓
+Exit Authorization
+       /       \
+     NO         YES
+     ↓           ↓
+Gate Closed   QRIS Appears
+                on Gate
+                  ↓
+               Payment
+                  ↓
+             CCTV Capture
+                  ↓
+             Exit Recorded
+                  ↓
+             Barrier Opens
+                  ↓
+          Exit Notification
+```
+
+The QRIS is displayed **only on the physical parking gate**, not inside the mobile application.
+
+---
+
+## Exit Authorization
+
+When a vehicle requests to leave, the user receives a notification such as:
+
+```text
+Vehicle Exit Request
+
+Honda Beat
+L 1234 XX
+
+Gate A
+17:30
+
+Do you authorize this vehicle to exit?
+
+[ NO ]    [ YES ]
+```
+
+The user must log in using their PIN before approving the exit request.
+
+If the user selects **NO**, the gate remains closed.
+
+If the user selects **YES**, the backend sends authorization to the specific gate where the vehicle is waiting.
+
+---
+
+## Multi-Gate Support
+
+ParkSense supports multiple parking gates.
+
+Each gate has a unique identifier.
+
+Example:
+
+```text
+GATE-A
+Main Entrance
+
+GATE-B
+Main Exit
+
+GATE-C
+Basement Exit
+```
+
+The Gate ID is sent to the backend by the hardware.
+
+The user does not manually select a gate.
+
+For example:
+
+```text
+Vehicle:
+L 1234 XX
+
+Gate:
+GATE-B
+
+Status:
+Waiting for Payment
+```
+
+When the user approves the exit request, the backend knows that the QRIS and authorization must be sent to `GATE-B`.
+
+This allows multiple gates to operate independently while remaining connected to the same backend.
+
+---
+
+## Parking Tariff
+
+Parking uses a flat-rate pricing model.
+
+| Vehicle Type | Tariff  |
+| ------------ | ------- |
+| Motorcycle   | Rp3,000 |
+| Car          | Rp5,000 |
+| Truck        | Rp5,000 |
+| Bus          | Rp5,000 |
+
+The tariff is used during the payment process.
+
+**Parking fees are not displayed in the user's parking history.**
+
+---
+
+## Mobile Application
+
+The mobile application contains four main sections:
+
+```text
+Home
+├── Current Parking
+└── Parking Activity
+
+Vehicles
+├── Vehicle List
+├── Add Vehicle
+└── STNK Scan
+
+Notifications
+├── Entry Notification
+├── Exit Request
+├── Payment Notification
+└── Exit Notification
+
+Profile
+└── User Account
+```
+
+---
+
+## System Architecture
+
+ParkSense consists of three main components:
+
+```text
+┌─────────────────────┐
+│    Mobile App       │
+│       User          │
+└──────────┬──────────┘
+           │
+           │ API
+           ▼
+┌─────────────────────┐
+│      Backend        │
+│       Server        │
+└──────────┬──────────┘
+           │
+           │ IoT / Network
+           ▼
+┌─────────────────────┐
+│    Parking Gate     │
+│                     │
+│  ANPR               │
+│  PIN Keypad         │
+│  CCTV               │
+│  QRIS Display       │
+│  Vehicle Sensor     │
+│  Barrier            │
+└─────────────────────┘
+```
+
+---
+
+## Gate Components
+
+Each parking gate may contain:
+
+* Vehicle sensor
+* ANPR/LPR camera
+* PIN keypad
+* CCTV camera
+* QRIS display
+* IoT controller
+* Barrier gate
+* Network connection
+
+### Vehicle Sensor
+
+The vehicle sensor is responsible only for detecting the presence of a vehicle.
+
+It does not identify the vehicle owner.
+
+### ANPR/LPR
+
+The ANPR camera reads the vehicle license plate.
+
+### CCTV
+
+CCTV provides visual documentation during entry and exit.
+
+### PIN Keypad
+
+The keypad allows the user to authenticate at the physical gate.
+
+### QRIS Display
+
+The QRIS display is activated after exit authorization has been approved.
+
+---
+
+## Emergency Exit
+
+If the user's phone is unavailable or the battery is dead, an operator can perform manual verification.
+
+The operator verifies the physical STNK against the registered vehicle data.
+
+After verification:
+
+```text
+Physical STNK Verification
+          ↓
+Operator Authorization
+          ↓
+QRIS Displayed on Gate
+          ↓
+Payment
+          ↓
+CCTV Documentation
+          ↓
+Barrier Opens
+```
+
+Manual authorization is recorded for auditing purposes.
+
+---
+
+## Security
+
+* User PINs must not be displayed to administrators.
+* PINs should be stored securely using hashing.
+* Each parking gate has a unique Gate ID.
+* Vehicle access is associated with a registered parking session.
+* Manual operator authorization should be logged.
+* CCTV and STNK data should have restricted access.
+
+---
+
+## Privacy
+
+The system may process vehicle and identification data such as:
+
+* License plate numbers
+* STNK images
+* Vehicle information
+* CCTV images
+* Parking activity
+
+Access to this information should be restricted to authorized users and operators.
+
+---
+
+## Project Status
+
+ParkSense is currently under development.
+
+The project is being developed as a prototype for an IoT-based smart parking system consisting of:
+
+* Mobile User Application
+* Backend Server
+* IoT Parking Gate
+* ANPR/LPR
+* CCTV
+* QRIS Payment
+* Multi-Gate Management
+
+---
+
+## License
+
+This project is intended for educational and prototype development purposes.
