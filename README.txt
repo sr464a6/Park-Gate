@@ -1,29 +1,167 @@
 # Park Gate
 
-### Smart Parking & Vehicle Access System
+## Smart Parking IoT System
 
-ParkSense is a smart parking system designed to integrate a mobile user application with IoT-based parking gates.
+Par Gate is an **IoT-based smart parking system** that integrates a mobile application, web-based administration dashboard, backend services, and smart parking gate hardware.
 
-The system allows registered users to manage their vehicles, monitor parking activity, receive parking notifications, and authorize vehicle exits through the mobile application.
-
-The project is designed to support multiple parking gates and connect them through a centralized backend.
+The system is designed to manage vehicle registration, parking access, parking sessions, exit authorization, payment, CCTV documentation, and multiple parking gates in an integrated environment.
 
 ---
 
-## Features
+## System Overview
 
-### User Authentication
+ParkSense consists of four main components:
+
+1. **User Mobile Application**
+2. **Web Admin / Operator Dashboard**
+3. **Backend Server**
+4. **IoT Parking Gate Hardware**
+
+```text id="1qu4j7"
+                       ┌──────────────────────┐
+                       │    User Mobile App   │
+                       │                      │
+                       │ • Vehicle Management │
+                       │ • Notifications     │
+                       │ • Exit Authorization│
+                       └──────────┬───────────┘
+                                  │
+                                  │ API
+                                  ▼
+                       ┌──────────────────────┐
+                       │    Backend Server    │
+                       │                      │
+                       │ • Authentication    │
+                       │ • Parking Sessions  │
+                       │ • Gate Management   │
+                       │ • Notifications     │
+                       │ • Payment Status    │
+                       └───────┬───────┬──────┘
+                               │       │
+                         API / IoT     │
+                               │       │
+                ┌──────────────┘       └──────────────┐
+                ▼                                     ▼
+      ┌────────────────────┐               ┌────────────────────┐
+      │   Web Admin        │               │ Parking Gate IoT   │
+      │    Operator        │               │                    │
+      │                    │               │ • Vehicle Sensor   │
+      │ • Dashboard        │               │ • ANPR/LPR         │
+      │ • Monitoring       │               │ • PIN Keypad       │
+      │ • Users            │               │ • CCTV             │
+      │ • Vehicles         │               │ • QRIS Display     │
+      │ • Payments         │               │ • Barrier          │
+      │ • Manual Auth      │               │ • IoT Controller   │
+      └────────────────────┘               └────────────────────┘
+```
+
+---
+
+# Main Features
+
+## User Mobile Application
+
+The mobile application is used by parking users.
+
+Main features:
 
 * Phone number registration
 * OTP verification
 * PIN creation
 * PIN-based login
-
-No email or password is required for the main authentication flow.
+* Multiple vehicle registration
+* Vehicle type selection
+* STNK scanning
+* Parking activity monitoring
+* Entry photo viewing
+* Exit photo viewing
+* Parking notifications
+* Exit authorization
+* Payment status notifications
+* User profile
 
 ---
 
-### Vehicle Management
+## Web Admin / Operator
+
+The web dashboard is used by parking administrators and operators.
+
+Main features:
+
+* Dashboard
+* Parking monitoring
+* Multi-gate monitoring
+* User management
+* Vehicle management
+* Parking history
+* Payment monitoring
+* Revenue monitoring
+* Exit request monitoring
+* CCTV documentation
+* Hardware status
+* Tariff management
+* Emergency/manual authorization
+* Audit log
+
+---
+
+## IoT Parking Gate
+
+Each parking gate is equipped with hardware for vehicle detection, identification, authentication, documentation, payment, and physical access control.
+
+Main components:
+
+* Vehicle sensor
+* ANPR/LPR camera
+* PIN keypad
+* CCTV camera
+* QRIS display
+* IoT / industrial controller
+* Barrier gate
+* Network connection
+* Power supply / UPS
+
+---
+
+# User Authentication
+
+## Registration
+
+The registration process is intentionally simple.
+
+```text id="a2cg18"
+Phone Number
+      ↓
+OTP Verification
+      ↓
+Create PIN
+      ↓
+Add Vehicle
+      ↓
+Account Ready
+```
+
+Users do not need to register an email or password.
+
+---
+
+## Login
+
+User authentication uses a PIN.
+
+```text id="e0q5fk"
+Open App
+   ↓
+Enter PIN
+   ↓
+Login
+```
+
+The PIN is also used as part of the vehicle access authorization process.
+
+---
+
+# Vehicle Management
 
 Users can register multiple vehicles.
 
@@ -34,138 +172,187 @@ Supported vehicle types:
 * Truck
 * Bus
 
-Vehicle registration uses an STNK scanning flow:
+Vehicle data includes:
 
-```text
-Scan STNK
-   ↓
-Automatic Capture
-   ↓
-Read STNK Data
-   ↓
-Confirm Data
-   ↓
-Save / Retake
-```
-
-The application can retrieve vehicle information such as:
-
-* License plate number
+* License plate
 * Owner name
 * Address
-* Vehicle brand/type
+* Vehicle type
+* Brand/model
 * Vehicle color
 * STNK information
 
 ---
 
-## Parking Monitoring
+# STNK Scanning
 
-The mobile application provides a simple parking activity list directly on the Home screen.
+STNK registration is performed directly from the mobile application.
 
-Each parking record contains:
+The application uses the camera to scan the STNK.
 
-* Vehicle
-* License plate
-* Date
-* Entry time
-* Exit time
-* Entry photo
-* Exit photo
-
-Example:
-
-```text
-Honda Beat
-L 1234 XX
-22 September 2026
-
-Entry : 08:15   [View Photo]
-Exit  : 17:30   [View Photo]
+```text id="5o0r9r"
+Open Add Vehicle
+       ↓
+Select Vehicle Type
+       ↓
+Scan STNK
+       ↓
+Automatic Capture
+       ↓
+STNK Data Recognition
+       ↓
+Show Result
+       ↓
+"Is the data correct?"
+      /              \
+   Save              Retake
+    ↓                  ↓
+Vehicle Added       Scan Again
 ```
 
-Parking photos are not displayed automatically. Users can view them by selecting the corresponding **View Photo** button.
-
-Parking fees are not displayed in the parking activity log.
+The user can retake the photo if the captured STNK image or extracted data is incorrect.
 
 ---
 
-## Parking Entry Flow
+# Parking Entry
 
 The user does not need to open the mobile application when entering the parking area.
 
-```text
+## Entry Flow
+
+```text id="f0i9lq"
 Vehicle Arrives
-      ↓
+       ↓
 Vehicle Sensor Detects Vehicle
-      ↓
-ANPR Reads License Plate
-      ↓
+       ↓
+ANPR/LPR Reads License Plate
+       ↓
 User Enters PIN on Gate
-      ↓
-Backend Validates Vehicle + PIN
-      ↓
+       ↓
+Backend Validates:
+• License Plate
+• PIN
+• Registered Vehicle
+       ↓
 CCTV Captures Entry Documentation
-      ↓
-Entry Session Created
-      ↓
-Barrier Opens
-      ↓
+       ↓
+Parking Session Created
+       ↓
+Entry Date & Time Recorded
+       ↓
+Gate Opens
+       ↓
 Push Notification Sent
 ```
 
-The system records the entry time and the Gate ID used by the vehicle.
+The system records the Gate ID used for entry.
+
+Example:
+
+```text id="0e5b3h"
+Vehicle       : Honda Beat
+License Plate : L 1234 XX
+Entry Gate    : GATE-A
+Entry Date    : 22 September 2026
+Entry Time    : 08:15
+Status        : PARKED
+```
 
 ---
 
-## Parking Exit Flow
+# Parking Session
 
-The exit process requires authorization from the vehicle owner.
+A parking session is created when a vehicle successfully enters.
 
-```text
+A session contains information such as:
+
+* Vehicle
+* License plate
+* Entry gate
+* Entry date
+* Entry time
+* Entry documentation
+* Exit gate
+* Exit date
+* Exit time
+* Exit documentation
+* Payment status
+* Session status
+
+Example:
+
+```text id="j8h3uw"
+Vehicle       : Honda Beat
+License Plate : L 1234 XX
+
+Entry Gate    : GATE-A
+Entry Time    : 08:15
+
+Exit Gate     : GATE-B
+Exit Time     : 17:35
+
+Status        : EXITED
+```
+
+---
+
+# Parking Exit
+
+The exit process requires confirmation from the vehicle owner.
+
+## Exit Flow
+
+```text id="x8m6cy"
 Vehicle Arrives at Exit Gate
           ↓
 Vehicle Sensor Detects Vehicle
           ↓
-ANPR Reads License Plate
+ANPR/LPR Reads License Plate
           ↓
 User Enters PIN on Gate
           ↓
-Active Parking Session Found
+Backend Finds Active Parking Session
           ↓
-Notification Sent to Mobile App
+Exit Request Created
           ↓
-User Opens App
+Mobile Notification Sent
           ↓
-PIN Login
+User Opens Mobile App
+          ↓
+User Logs In Using PIN
           ↓
 Exit Authorization
-       /       \
-     NO         YES
-     ↓           ↓
-Gate Closed   QRIS Appears
-                on Gate
-                  ↓
-               Payment
-                  ↓
-             CCTV Capture
-                  ↓
-             Exit Recorded
-                  ↓
-             Barrier Opens
-                  ↓
-          Exit Notification
+        /       \
+      NO         YES
+      ↓           ↓
+Gate Closed   Authorization Sent
+                  to Gate
+                    ↓
+              QRIS Displayed
+                 at Gate
+                    ↓
+                Payment
+                    ↓
+             Payment Verified
+                    ↓
+            CCTV Captures Exit
+                    ↓
+             Exit Time Recorded
+                    ↓
+            Parking Session Done
+                    ↓
+               Gate Opens
+                    ↓
+           Exit Notification
 ```
-
-The QRIS is displayed **only on the physical parking gate**, not inside the mobile application.
 
 ---
 
-## Exit Authorization
+# Exit Authorization
 
-When a vehicle requests to leave, the user receives a notification such as:
+The user receives a notification:
 
-```text
+```text id="njb0sn"
 Vehicle Exit Request
 
 Honda Beat
@@ -176,26 +363,106 @@ Gate A
 
 Do you authorize this vehicle to exit?
 
-[ NO ]    [ YES ]
+[ NO ]       [ YES ]
 ```
 
-The user must log in using their PIN before approving the exit request.
+The user must log in to the application using their PIN before confirming the request.
 
-If the user selects **NO**, the gate remains closed.
+### If the user selects NO
 
-If the user selects **YES**, the backend sends authorization to the specific gate where the vehicle is waiting.
+```text
+Exit Authorization
+       ↓
+Rejected
+       ↓
+Gate Remains Closed
+```
+
+### If the user selects YES
+
+```text
+Exit Authorization
+       ↓
+Backend Sends Authorization
+       ↓
+Correct Gate Receives Authorization
+       ↓
+QRIS Appears on Gate
+```
+
+The QRIS is **never displayed inside the mobile application**.
 
 ---
 
-## Multi-Gate Support
+# QRIS Payment
 
-ParkSense supports multiple parking gates.
+Payment is performed at the physical parking gate.
 
-Each gate has a unique identifier.
+The payment flow is:
+
+```text id="3w0c4m"
+User Approves Exit
+       ↓
+Gate Displays QRIS
+       ↓
+User Scans QRIS
+       ↓
+Payment
+       ↓
+Backend Receives Payment Status
+       ↓
+Payment Verified
+       ↓
+Exit Process Continues
+```
+
+Parking uses a flat-rate tariff.
+
+| Vehicle Type |  Tariff |
+| ------------ | ------: |
+| Motorcycle   | Rp3,000 |
+| Car          | Rp5,000 |
+| Truck        | Rp5,000 |
+| Bus          | Rp5,000 |
+
+Entry and exit times are used for monitoring and history, not for calculating the tariff.
+
+---
+
+# CCTV Documentation
+
+CCTV is used to capture visual documentation during parking access.
+
+## Entry
+
+CCTV captures documentation after the vehicle and PIN have been validated.
+
+## Exit
+
+CCTV captures documentation after payment has been successfully completed.
+
+The mobile application does not automatically display these images.
+
+Users can select:
+
+* **View Entry Photo**
+* **View Exit Photo**
+
+to load the corresponding documentation.
+
+Authorized operators can also access the documentation through the Web Admin.
+
+---
+
+# Multi-Gate Architecture
+
+ParkSense supports multiple entrance and exit gates.
+
+Every gate has a unique Gate ID.
 
 Example:
 
-```text
+```text id="1v0y2t"
 GATE-A
 Main Entrance
 
@@ -204,211 +471,574 @@ Main Exit
 
 GATE-C
 Basement Exit
+
+GATE-D
+East Exit
 ```
 
-The Gate ID is sent to the backend by the hardware.
+Each hardware device identifies itself using its Gate ID.
 
-The user does not manually select a gate.
+The backend uses this ID to determine which gate is handling a vehicle.
 
-For example:
+---
 
-```text
+## Gate Identification
+
+Example:
+
+```text id="55tdh0"
+GATE-A
+
+Device ID:
+GATE-A
+
+Location:
+Main Entrance
+
+Status:
+ONLINE
+```
+
+When a vehicle arrives:
+
+```text id="zhb2l8"
 Vehicle:
+L 1234 XX
+
+Gate:
+GATE-A
+```
+
+The Gate ID becomes part of the parking session.
+
+When the vehicle exits through another gate:
+
+```text id="g6v2cq"
+Entry Gate:
+GATE-A
+
+Exit Gate:
+GATE-B
+```
+
+---
+
+# Gate-to-Backend Communication
+
+The hardware sends information to the backend.
+
+Example:
+
+```text id="qihj1d"
+GATE-B
+
+Vehicle Detected
+        ↓
+ANPR Result:
+L 1234 XX
+        ↓
+PIN Entered
+        ↓
+Exit Request
+        ↓
+Waiting for User Approval
+```
+
+When the user presses **YES** in the mobile application:
+
+```text id="y6t6h9"
+Backend
+   ↓
+GATE-B
+   ↓
+Display QRIS
+   ↓
+Payment
+   ↓
+Open Barrier
+```
+
+The user does not manually select Gate B.
+
+The backend knows which gate requested the authorization.
+
+---
+
+# Gate Hardware
+
+## Vehicle Sensor
+
+The vehicle sensor detects whether a vehicle is physically present at the gate.
+
+Its purpose is only vehicle presence detection.
+
+It does not identify the vehicle owner.
+
+Possible implementations:
+
+* IR beam sensor
+* Ultrasonic / ToF sensor
+* Radar vehicle detector
+* Inductive loop for production deployment
+
+---
+
+## ANPR / LPR Camera
+
+The ANPR/LPR camera is responsible for reading the vehicle license plate.
+
+Example:
+
+```text id="o5t40j"
+Camera
+   ↓
+License Plate Detection
+   ↓
+L 1234 XX
+   ↓
+Backend
+```
+
+The plate number is then matched against registered vehicle data.
+
+---
+
+## PIN Keypad
+
+The physical keypad allows the user to enter their PIN at the parking gate.
+
+The backend validates the PIN against the registered user.
+
+User PINs must never be exposed to administrators.
+
+---
+
+## CCTV Camera
+
+CCTV provides visual documentation of the vehicle and surrounding access area.
+
+It is used during:
+
+* Vehicle entry
+* Vehicle exit
+* Manual verification when required
+
+---
+
+## QRIS Display
+
+The QRIS display is located on the physical gate.
+
+It remains inactive until the exit request has been authorized.
+
+```text id="n2v7kd"
+Exit Request
+     ↓
+User Approves YES
+     ↓
+Backend
+     ↓
+Correct Gate
+     ↓
+QRIS Display ON
+```
+
+---
+
+## Barrier Gate
+
+The barrier physically controls vehicle access.
+
+The barrier opens only after the required validation and authorization process has been completed.
+
+---
+
+# Web Admin / Operator
+
+The Web Admin is designed for desktop/PC use.
+
+## Dashboard
+
+The dashboard displays:
+
+* Vehicles currently parked
+* Entries today
+* Exits today
+* Revenue today
+* Online gates
+* Offline gates
+* System alerts
+
+Example:
+
+```text id="7s30s9"
+Currently Parked : 128
+Entries Today    : 342
+Exits Today      : 214
+Revenue Today    : Rp1.070.000
+Online Gates     : 8 / 10
+Offline Gates    : 2
+```
+
+---
+
+# Parking Monitor
+
+The operator can monitor currently parked vehicles.
+
+Example:
+
+| Vehicle       | Plate     | Type       | Entry Time | Entry Gate | Status |
+| ------------- | --------- | ---------- | ---------- | ---------- | ------ |
+| Honda Beat    | L 1234 XX | Motorcycle | 08:15      | GATE-A     | Parked |
+| Toyota Avanza | L 5678 AB | Car        | 08:30      | GATE-A     | Parked |
+
+The operator can search by:
+
+* License plate
+* Vehicle type
+* Gate
+* Status
+
+---
+
+# Gate Monitoring
+
+The Web Admin provides hardware monitoring for each gate.
+
+Example:
+
+```text id="0d1jmw"
+GATE-A
+Main Entrance
+
+Gate Status      : ONLINE
+Vehicle Sensor   : ONLINE
+ANPR Camera      : ONLINE
+CCTV             : ONLINE
+PIN Keypad       : ONLINE
+QRIS Display     : ONLINE
+Barrier          : ONLINE
+```
+
+This allows operators to quickly identify hardware problems.
+
+---
+
+# User Management
+
+Admin can view:
+
+* User name
+* Phone number
+* Registered vehicle count
+* Account status
+* Registration date
+
+Admin can search users using:
+
+* Name
+* Phone number
+* License plate
+
+The user's PIN is never displayed.
+
+---
+
+# Vehicle Management
+
+Admin can manage registered vehicles.
+
+Information includes:
+
+* License plate
+* Vehicle type
+* Brand/model
+* Color
+* Owner
+* STNK status
+* Registration status
+
+STNK images are only shown when viewing the vehicle detail.
+
+---
+
+# Parking History
+
+The Web Admin can view completed parking sessions.
+
+Example:
+
+| Date | Vehicle | Plate | Entry | Exit | Entry Gate | Exit Gate | Status |
+| ---- | ------- | ----- | ----- | ---- | ---------- | --------- | ------ |
+
+Filters:
+
+* Date
+* License plate
+* Vehicle type
+* Gate
+* Status
+
+---
+
+# Payment Monitoring
+
+The admin can monitor payment transactions.
+
+Information includes:
+
+* Transaction ID
+* Date
+* Time
+* Vehicle
+* License plate
+* Vehicle type
+* Gate
+* Payment status
+* Amount
+
+Payment statuses:
+
+* Pending
+* Paid
+* Failed
+
+---
+
+# Exit Request Monitoring
+
+Operators can monitor active exit requests.
+
+Example:
+
+```text id="y9y6gn"
+Honda Beat
 L 1234 XX
 
 Gate:
 GATE-B
 
 Status:
+Waiting for User Approval
+```
+
+Possible statuses:
+
+```text id="l0h4f9"
+Waiting for User Approval
+Approved
+Rejected
 Waiting for Payment
+Payment Completed
+Exited
 ```
 
-When the user approves the exit request, the backend knows that the QRIS and authorization must be sent to `GATE-B`.
-
-This allows multiple gates to operate independently while remaining connected to the same backend.
+The normal exit authorization is performed by the vehicle owner through the mobile application.
 
 ---
 
-## Parking Tariff
+# Emergency Manual Authorization
 
-Parking uses a flat-rate pricing model.
+If the user's phone is unavailable, for example because the phone battery is dead, the operator can perform manual verification.
 
-| Vehicle Type | Tariff  |
-| ------------ | ------- |
-| Motorcycle   | Rp3,000 |
-| Car          | Rp5,000 |
-| Truck        | Rp5,000 |
-| Bus          | Rp5,000 |
+The user provides the physical STNK.
 
-The tariff is used during the payment process.
+The operator verifies:
 
-**Parking fees are not displayed in the user's parking history.**
+* License plate
+* Owner name
+* Vehicle type
+* Vehicle information
+* STNK information
 
----
+Flow:
 
-## Mobile Application
-
-The mobile application contains four main sections:
-
-```text
-Home
-├── Current Parking
-└── Parking Activity
-
-Vehicles
-├── Vehicle List
-├── Add Vehicle
-└── STNK Scan
-
-Notifications
-├── Entry Notification
-├── Exit Request
-├── Payment Notification
-└── Exit Notification
-
-Profile
-└── User Account
-```
-
----
-
-## System Architecture
-
-ParkSense consists of three main components:
-
-```text
-┌─────────────────────┐
-│    Mobile App       │
-│       User          │
-└──────────┬──────────┘
-           │
-           │ API
-           ▼
-┌─────────────────────┐
-│      Backend        │
-│       Server        │
-└──────────┬──────────┘
-           │
-           │ IoT / Network
-           ▼
-┌─────────────────────┐
-│    Parking Gate     │
-│                     │
-│  ANPR               │
-│  PIN Keypad         │
-│  CCTV               │
-│  QRIS Display       │
-│  Vehicle Sensor     │
-│  Barrier            │
-└─────────────────────┘
-```
-
----
-
-## Gate Components
-
-Each parking gate may contain:
-
-* Vehicle sensor
-* ANPR/LPR camera
-* PIN keypad
-* CCTV camera
-* QRIS display
-* IoT controller
-* Barrier gate
-* Network connection
-
-### Vehicle Sensor
-
-The vehicle sensor is responsible only for detecting the presence of a vehicle.
-
-It does not identify the vehicle owner.
-
-### ANPR/LPR
-
-The ANPR camera reads the vehicle license plate.
-
-### CCTV
-
-CCTV provides visual documentation during entry and exit.
-
-### PIN Keypad
-
-The keypad allows the user to authenticate at the physical gate.
-
-### QRIS Display
-
-The QRIS display is activated after exit authorization has been approved.
-
----
-
-## Emergency Exit
-
-If the user's phone is unavailable or the battery is dead, an operator can perform manual verification.
-
-The operator verifies the physical STNK against the registered vehicle data.
-
-After verification:
-
-```text
-Physical STNK Verification
-          ↓
-Operator Authorization
-          ↓
-QRIS Displayed on Gate
-          ↓
+```text id="0q7d8x"
+Physical STNK
+      ↓
+Operator Verification
+      ↓
+Vehicle Data Matched
+      ↓
+Manual Authorization
+      ↓
+QRIS Appears at Gate
+      ↓
 Payment
-          ↓
+      ↓
 CCTV Documentation
-          ↓
+      ↓
 Barrier Opens
 ```
 
-Manual authorization is recorded for auditing purposes.
+Every manual authorization must be recorded in the Audit Log.
 
 ---
 
-## Security
+# Audit Log
 
-* User PINs must not be displayed to administrators.
-* PINs should be stored securely using hashing.
-* Each parking gate has a unique Gate ID.
-* Vehicle access is associated with a registered parking session.
-* Manual operator authorization should be logged.
-* CCTV and STNK data should have restricted access.
+The system records important administrative actions.
 
----
+Example:
 
-## Privacy
+| Date       | Time  | Admin       | Action                    | Gate   | Vehicle   |
+| ---------- | ----- | ----------- | ------------------------- | ------ | --------- |
+| 22/09/2026 | 17:32 | Operator 01 | Manual Exit Authorization | GATE-B | L 1234 XX |
 
-The system may process vehicle and identification data such as:
+Logged actions may include:
 
-* License plate numbers
-* STNK images
-* Vehicle information
-* CCTV images
-* Parking activity
-
-Access to this information should be restricted to authorized users and operators.
+* Manual exit authorization
+* Vehicle data changes
+* User data changes
+* Tariff changes
+* Gate configuration changes
+* Administrative login
 
 ---
 
-## Project Status
+# Tariff Management
 
-ParkSense is currently under development.
+Administrators can configure parking tariffs.
 
-The project is being developed as a prototype for an IoT-based smart parking system consisting of:
+Default tariff:
 
-* Mobile User Application
-* Backend Server
-* IoT Parking Gate
-* ANPR/LPR
-* CCTV
-* QRIS Payment
-* Multi-Gate Management
+```text id="9j7hbt"
+Motorcycle   Rp3,000
+Car          Rp5,000
+Truck        Rp5,000
+Bus          Rp5,000
+```
+
+Tariff changes are recorded in the Audit Log.
 
 ---
 
-## License
+# Notification System
 
-This project is intended for educational and prototype development purposes.
+The mobile application receives notifications for important parking events.
+
+## Entry Notification
+
+```text id="4v0o5r"
+Vehicle Entered Successfully
+
+Honda Beat
+L 1234 XX
+
+Gate A
+08:15
+
+[ View Photo ]
+```
+
+## Exit Request
+
+```text id="7w2j5u"
+Vehicle Exit Request
+
+Honda Beat
+L 1234 XX
+
+Gate A
+17:30
+
+[ NO ] [ YES ]
+```
+
+## Payment Notification
+
+```text id="5z4q2s"
+Payment Successful
+
+Honda Beat
+L 1234 XX
+```
+
+## Exit Notification
+
+```text id="l9i5jz"
+Vehicle Exited Successfully
+
+Honda Beat
+L 1234 XX
+
+Gate A
+17:35
+
+[ View Photo ]
+```
+
+---
+
+# Parking Activity in Mobile App
+
+The mobile application keeps the parking interface simple.
+
+The Home screen directly displays the user's parking activity.
+
+Example:
+
+```text id="d7d6ly"
+Honda Beat
+L 1234 XX
+22 September 2026
+
+Entry : 08:15  [ View Photo ]
+Exit  : 17:35  [ View Photo ]
+```
+
+No separate complex history detail page is required.
+
+Parking fees are not displayed in the user's parking activity list.
+
+---
+
+# System Status
+
+A parking session can use statuses such as:
+
+```text id="p5br3s"
+PARKED
+   ↓
+EXIT REQUEST
+   ↓
+WAITING FOR APPROVAL
+   ↓
+AUTHORIZED
+   ↓
+WAITING FOR PAYMENT
+   ↓
+PAYMENT COMPLETED
+   ↓
+EXITED
+```
+
+---
+
+# Security
+
+ParkSense follows basic security principles:
+
+* User PINs are stored securely using hashing.
+* User PINs are never shown to administrators.
+* Authentication is required for sensitive actions.
+* Every gate has a unique Gate ID.
+* Vehicle access is validated against registered vehicle data.
+* Manual authorizations are logged.
+* Administrative actions are recorded in the Audit Log.
+* STNK data is restricted to authorized access.
+* CCTV documentation is restricted to authorized access.
+
+---
+
+# Data Flow
+
+The overall system data flow is:
+
+```text id="8f9mcv"
+                    USER
+                     │
+                     ▼
+              ┌─────────────┐
+```
