@@ -1,7 +1,0 @@
-# Baca plat otomatis dari kamera (ANPR)
-fast-alpr[onnx]
-opencv-python-headless
-# Bandingkan wajah orang yang masuk vs keluar
-face_recognition
-# Untuk cctv_worker.py
-requests
