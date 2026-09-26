@@ -1,4 +1,4 @@
-# Park Gate — Real Application
+# Park Gate
 
 Park Gate is a **real working parking management application**, not a simulation.
 
@@ -39,5 +39,5 @@ Make sure the following are installed:
 Check your installed versions:
 
 ```bash
-node --version
-npm --version
+npm install
+npm start
