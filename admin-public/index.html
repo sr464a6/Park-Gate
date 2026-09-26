@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Park Gate Admin</title>
+<style>
+  :root{--teal:#0f4a43;--ink:#10201d;--ink-soft:#4d5d59;--line:#e2e6e0;--card:#fff;--paper:#f4f6f3;}
+  *{box-sizing:border-box;}
+  body{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--paper);color:var(--ink);margin:0;padding:24px;}
+  .wrap{max-width:900px;margin:0 auto;}
+  h1{font-size:20px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px;}
+  input,select{padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px;margin-right:8px;margin-bottom:8px;}
+  button{padding:9px 16px;border:none;border-radius:8px;background:var(--teal);color:#fff;font-weight:700;cursor:pointer;}
+  button.secondary{background:#fff;color:var(--teal);border:1px solid var(--teal);}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;}
+  .stat b{font-size:22px;display:block;}
+  .stat span{font-size:12px;color:var(--ink-soft);}
+  .msg{font-size:13px;margin-top:8px;}
+  .msg.err{color:#b23b3b;} .msg.ok{color:#1f7a52;}
+  #loginBox{max-width:340px;margin:60px auto;}
+  .hide{display:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🅿️ Park Gate — Admin & Gate Simulator</h1>
+
+  <div class="card" id="loginBox">
+    <h3>Login Admin</h3>
+    <input id="au" placeholder="username"><br>
+    <input id="ap" type="password" placeholder="password"><br>
+    <button onclick="adminLogin()">Masuk</button>
+    <div class="msg err" id="loginMsg"></div>
+  </div>
+
+  <div id="mainBox" class="hide">
+    <div class="stats" id="stats"></div>
+
+    <div class="card">
+      <h3>Gate Simulator <span style="font-weight:400;font-size:12px;color:#4d5d59;">(stand-in untuk sensor/ANPR/barrier fisik — panggil endpoint API yang sama dari controller IoT asli)</span></h3>
+      <div>
+        <b>Entry</b><br>
+        <input id="e_gate" placeholder="gate code (GATE-A)" value="GATE-A">
+        <input id="e_plate" placeholder="plat (L1234XX)">
+        <input id="e_pin" placeholder="PIN pemilik">
+        <button onclick="gateEntry()">Buka Gerbang Masuk</button>
+      </div>
+      <div style="margin-top:12px;">
+        <b>Exit Request</b><br>
+        <input id="x_gate" placeholder="gate code (GATE-B)" value="GATE-B">
+        <input id="x_plate" placeholder="plat (L1234XX)">
+        <button onclick="gateExitRequest()">Kirim Permintaan Keluar</button>
+      </div>
+      <div style="margin-top:12px;">
+        <b>Payment Confirm</b><br>
+        <input id="p_session" placeholder="session id">
+        <button onclick="gatePayment()">Konfirmasi Pembayaran QRIS</button>
+      </div>
+      <div class="msg" id="gateMsg"></div>
+    </div>
+
+    <div class="card">
+      <h3>Sesi Parkir Terbaru</h3>
+      <table id="sessTable"><thead><tr><th>ID</th><th>Plat</th><th>Status</th><th>Masuk</th><th>Keluar</th><th>Bayar</th></tr></thead><tbody></tbody></table>
+    </div>
+
+    <div class="card">
+      <h3>Pengguna</h3>
+      <table id="userTable"><thead><tr><th>Nama</th><th>HP</th><th>Kendaraan</th></tr></thead><tbody></tbody></table>
+    </div>
+
+    <div class="card">
+      <h3>Audit Log</h3>
+      <table id="auditTable"><thead><tr><th>Waktu</th><th>Aktor</th><th>Aksi</th><th>Detail</th></tr></thead><tbody></tbody></table>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '/api';
+let adminToken = localStorage.getItem('pg_admin_token') || '';
+let gateKeyPrompted = localStorage.getItem('pg_gate_key') || '';
+
+async function api(path, opts = {}, useGateKey = false) {
+  const headers = opts.headers || { 'Content-Type': 'application/json' };
+  if (useGateKey) headers['X-Gate-Key'] = gateKeyPrompted || prompt('Masukkan GATE_API_KEY (dari .env server)') || '';
+  else if (adminToken) headers['Authorization'] = 'Bearer ' + adminToken;
+  const res = await fetch(API + path, { ...opts, headers });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Error');
+  return data;
+}
+
+async function adminLogin() {
+  const msg = document.getElementById('loginMsg');
+  try {
+    const data = await api('/admin/login', { method: 'POST', body: JSON.stringify({ username: au.value, password: ap.value }) });
+    adminToken = data.token;
+    localStorage.setItem('pg_admin_token', adminToken);
+    document.getElementById('loginBox').classList.add('hide');
+    document.getElementById('mainBox').classList.remove('hide');
+    loadAll();
+  } catch (err) { msg.textContent = err.message; }
+}
+
+async function loadAll() {
+  try {
+    const d = await api('/admin/dashboard');
+    document.getElementById('stats').innerHTML = `
+      <div class="stat"><b>${d.currently_parked}</b><span>Sedang Parkir</span></div>
+      <div class="stat"><b>${d.entries_today}</b><span>Masuk Hari Ini</span></div>
+      <div class="stat"><b>${d.exits_today}</b><span>Keluar Hari Ini</span></div>
+      <div class="stat"><b>Rp${d.revenue_today.toLocaleString('id-ID')}</b><span>Pendapatan Hari Ini</span></div>`;
+    const s = await api('/admin/sessions');
+    document.querySelector('#sessTable tbody').innerHTML = s.sessions.slice(0,30).map(x => `
+      <tr><td>${x.id}</td><td>${x.plate}</td><td>${x.status}</td><td>${x.entry_time||'-'}</td><td>${x.exit_time||'-'}</td><td>${x.payment_status}</td></tr>`).join('');
+    const u = await api('/admin/users');
+    document.querySelector('#userTable tbody').innerHTML = u.users.map(x => `
+      <tr><td>${x.name||'-'}</td><td>${x.phone}</td><td>${x.vehicle_count}</td></tr>`).join('');
+    const a = await api('/admin/audit-log');
+    document.querySelector('#auditTable tbody').innerHTML = a.audit_log.slice(0,30).map(x => `
+      <tr><td>${x.created_at}</td><td>${x.actor}</td><td>${x.action}</td><td>${x.detail||''}</td></tr>`).join('');
+  } catch (err) { console.error(err); }
+}
+
+function gmsg(text, ok) {
+  const el = document.getElementById('gateMsg');
+  el.textContent = text; el.className = 'msg ' + (ok ? 'ok' : 'err');
+}
+
+async function gateEntry() {
+  try {
+    const d = await api('/gate/entry', { method: 'POST', body: JSON.stringify({ gate_code: e_gate.value, plate: e_plate.value, pin: e_pin.value }) }, true);
+    gmsg('Gerbang terbuka. Session #' + d.session_id, true);
+    loadAll();
+  } catch (err) { gmsg(err.message, false); }
+}
+async function gateExitRequest() {
+  try {
+    await api('/gate/exit-request', { method: 'POST', body: JSON.stringify({ gate_code: x_gate.value, plate: x_plate.value }) }, true);
+    gmsg('Permintaan keluar terkirim ke pemilik.', true);
+    loadAll();
+  } catch (err) { gmsg(err.message, false); }
+}
+async function gatePayment() {
+  try {
+    await api('/gate/payment-confirm', { method: 'POST', body: JSON.stringify({ session_id: Number(p_session.value), method: 'QRIS' }) }, true);
+    gmsg('Pembayaran dikonfirmasi, gerbang terbuka.', true);
+    loadAll();
+  } catch (err) { gmsg(err.message, false); }
+}
+
+if (adminToken) {
+  document.getElementById('loginBox').classList.add('hide');
+  document.getElementById('mainBox').classList.remove('hide');
+  loadAll();
+}
+</script>
+</body>
+</html>

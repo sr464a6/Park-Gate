@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Smart Parking</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f4a43">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Smart Parking">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" href="icons/icon-192.png">
+<style>
+  :root{
+    --ink:#10201d; --ink-soft:#4d5d59; --paper:#f4f6f3; --card:#ffffff; --line:#e2e6e0;
+    --teal:#0f4a43; --teal-deep:#0a332e; --teal-tint:#e6f0ee;
+    --amber:#c8791b; --amber-tint:#faf0e0; --danger:#b23b3b; --danger-tint:#f8e9e9;
+    --ok:#1f7a52; --ok-tint:#e6f3ec; --radius-lg:20px; --radius-md:14px; --radius-sm:10px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);}
+  body{min-height:100vh;}
+  .app{max-width:460px;margin:0 auto;min-height:100vh;background:var(--paper);position:relative;padding-bottom:70px;}
+  .screen{display:none;padding:0 20px 24px;animation:fadeIn .18s ease;}
+  .screen.active{display:block;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+  .topbar{display:flex;align-items:center;gap:10px;padding:calc(env(safe-area-inset-top,0px) + 18px) 0 14px;}
+  .topbar h1{font-size:17px;margin:0;font-weight:700;}
+  .back-btn{width:34px;height:34px;border-radius:50%;background:var(--card);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;}
+  .title{font-size:22px;font-weight:800;letter-spacing:-.01em;margin:8px 0 4px;}
+  .sub{color:var(--ink-soft);font-size:14px;margin:0 0 18px;line-height:1.5;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:13px;color:var(--ink-soft);margin-bottom:6px;font-weight:600;}
+  .field input,.field select,.field textarea{width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:var(--radius-sm);font-size:15px;background:var(--card);color:var(--ink);}
+  .field input:focus,.field select:focus{outline:none;border-color:var(--teal);}
+  .btn{display:block;width:100%;padding:14px;border-radius:var(--radius-sm);border:none;font-size:15px;font-weight:700;cursor:pointer;text-align:center;}
+  .btn-primary{background:var(--teal);color:#fff;}
+  .btn-primary:disabled{opacity:.5;cursor:not-allowed;}
+  .btn-outline{background:var(--card);color:var(--teal);border:1px solid var(--teal);}
+  .btn-danger{background:var(--danger);color:#fff;}
+  .link-center{text-align:center;font-size:13.5px;color:var(--ink-soft);margin-top:18px;}
+  .link-center a{color:var(--teal);font-weight:700;cursor:pointer;}
+  .otp-row{display:flex;gap:8px;justify-content:center;margin:22px 0 6px;}
+  .otp-box{width:44px;height:54px;text-align:center;font-size:22px;font-weight:700;border:1.5px solid var(--line);border-radius:var(--radius-sm);background:var(--card);}
+  .otp-box:focus{outline:none;border-color:var(--teal);}
+  .pin-dots{display:flex;gap:16px;justify-content:center;margin:30px 0;}
+  .pin-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--teal);}
+  .pin-dot.filled{background:var(--teal);}
+  .keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:280px;margin:0 auto;}
+  .key{padding:18px 0;border-radius:16px;background:var(--card);border:1px solid var(--line);font-size:20px;font-weight:700;text-align:center;cursor:pointer;}
+  .key:active{background:var(--teal-tint);}
+  .key.ghost{background:transparent;border:none;box-shadow:none;}
+  .banner{padding:14px;border-radius:var(--radius-md);font-size:13.5px;margin-bottom:14px;}
+  .banner.err{background:var(--danger-tint);color:var(--danger);}
+  .banner.ok{background:var(--ok-tint);color:var(--ok);}
+  .banner.warn{background:var(--amber-tint);color:var(--amber);}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius-md);padding:16px;margin-bottom:12px;}
+  .row{display:flex;justify-content:space-between;align-items:center;}
+  .badge{font-size:11px;font-weight:800;padding:4px 9px;border-radius:20px;letter-spacing:.02em;}
+  .badge.parked{background:var(--teal-tint);color:var(--teal);}
+  .badge.wait{background:var(--amber-tint);color:var(--amber);}
+  .badge.pay{background:var(--amber-tint);color:var(--amber);}
+  .badge.done{background:var(--ok-tint);color:var(--ok);}
+  .section-label{font-size:12px;font-weight:800;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin:20px 0 10px;}
+  .bottomnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:460px;background:var(--card);border-top:1px solid var(--line);display:flex;padding:8px 0 calc(env(safe-area-inset-bottom,0px) + 8px);}
+  .navbtn{flex:1;text-align:center;font-size:11px;color:var(--ink-soft);cursor:pointer;padding:6px 0;}
+  .navbtn .ic{font-size:20px;display:block;}
+  .navbtn.active{color:var(--teal);font-weight:700;}
+  .empty{text-align:center;color:var(--ink-soft);font-size:13.5px;padding:40px 10px;}
+  .fab{position:fixed;bottom:80px;left:50%;transform:translateX(calc(-50% + 190px));width:52px;height:52px;border-radius:50%;background:var(--teal);color:#fff;font-size:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 6px 16px rgba(15,74,67,.35);}
+  .qris-box{background:#fff;border:1px solid var(--line);border-radius:var(--radius-md);padding:24px;text-align:center;}
+  .qris-fake{width:180px;height:180px;margin:0 auto 14px;background:repeating-linear-gradient(45deg,#10201d,#10201d 6px,#fff 6px,#fff 12px);border-radius:8px;}
+  .spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;display:inline-block;animation:spin .7s linear infinite;vertical-align:-2px;margin-right:6px;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:var(--teal-deep);color:#fff;padding:12px 18px;border-radius:12px;font-size:13.5px;z-index:999;max-width:90%;text-align:center;}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- SPLASH -->
+  <section class="screen active" data-screen="splash">
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:90vh;text-align:center;">
+      <div style="width:84px;height:84px;border-radius:24px;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:38px;margin-bottom:18px;">🅿️</div>
+      <div style="font-size:22px;font-weight:800;">Smart Parking</div>
+      <div style="color:var(--ink-soft);font-size:13.5px;margin-top:6px;">Parkir tanpa ribet, aman terpantau</div>
+      <button class="btn btn-primary" style="max-width:220px;margin-top:34px;" onclick="go('login')">Mulai</button>
+    </div>
+  </section>
+
+  <!-- LOGIN -->
+  <section class="screen" data-screen="login">
+    <div class="topbar"><h1>Masuk</h1></div>
+    <div id="loginBanner"></div>
+    <div id="loginKnownPhone" style="display:none;margin-bottom:14px;">
+      <div style="font-size:14px;">Masuk sebagai <b id="loginPhoneDisplay"></b></div>
+      <a onclick="switchAccount()" style="color:var(--teal);font-weight:700;font-size:13px;cursor:pointer;">Bukan nomor kamu? Ganti</a>
+    </div>
+    <div class="field" id="loginPhoneField"><label>Nomor HP</label><input type="tel" id="loginPhone" placeholder="08xxxxxxxxxx"></div>
+    <p class="sub" style="margin-top:-6px;">Masukkan PIN 4-6 digit kamu</p>
+    <div class="pin-dots" id="loginPinDots"></div>
+    <div class="keypad" id="loginKeypad"></div>
+    <p class="link-center">Belum punya akun? <a onclick="resetRegister();go('register')">Daftar</a></p>
+    <p class="link-center">Lupa PIN? <a onclick="startForgotPin()">Reset PIN</a></p>
+  </section>
+
+  <!-- REGISTER: PHONE -->
+  <section class="screen" data-screen="register">
+    <div class="topbar"><button class="back-btn" onclick="go('login')">←</button><h1>Daftar Akun</h1></div>
+    <div id="registerBanner"></div>
+    <h2 class="title">Nomor HP kamu</h2>
+    <p class="sub">Kami akan mengirim kode OTP asli ke nomor ini untuk verifikasi.</p>
+    <div class="field"><label>Nomor HP</label><input type="tel" id="regPhone" placeholder="08xxxxxxxxxx"></div>
+    <div class="field" id="regEmailField" style="display:none;"><label>Email</label><input type="email" id="regEmail" placeholder="nama@email.com"></div>
+    <button class="btn btn-primary" id="regSendBtn" onclick="requestOtp('register')">Lanjut</button>
+  </section>
+
+  <!-- OTP -->
+  <section class="screen" data-screen="otp">
+    <div class="topbar"><button class="back-btn" onclick="go(otpPurpose==='reset_pin'?'login':'register')">←</button><h1>Verifikasi OTP</h1></div>
+    <div id="otpBanner"></div>
+    <h2 class="title">Masukkan kode OTP</h2>
+    <p class="sub" id="otpSub">Kode verifikasi dikirim ke nomormu.</p>
+    <div class="otp-row">
+      <input class="otp-box" maxlength="1" inputmode="numeric" autocomplete="one-time-code">
+      <input class="otp-box" maxlength="1" inputmode="numeric">
+      <input class="otp-box" maxlength="1" inputmode="numeric">
+      <input class="otp-box" maxlength="1" inputmode="numeric">
+      <input class="otp-box" maxlength="1" inputmode="numeric">
+      <input class="otp-box" maxlength="1" inputmode="numeric">
+    </div>
+    <p class="link-center" style="margin-bottom:26px;">Tidak menerima kode? <a onclick="requestOtp(otpPurpose)">Kirim ulang</a></p>
+    <button class="btn btn-primary" id="otpVerifyBtn" onclick="verifyOtp()">Verifikasi</button>
+  </section>
+
+  <!-- CREATE PIN (after register OTP) -->
+  <section class="screen" data-screen="createpin">
+    <div class="topbar"><h1>Buat Akun</h1></div>
+    <div id="createBanner"></div>
+    <div class="field"><label>Nama Lengkap</label><input type="text" id="regName" placeholder="Nama kamu"></div>
+    <h2 class="title" style="margin-top:20px;">Buat PIN kamu</h2>
+    <p class="sub">PIN 4-6 digit ini digunakan untuk masuk & otorisasi keluar parkir.</p>
+    <div class="field"><label>PIN</label><input type="password" inputmode="numeric" id="regPin" maxlength="6" placeholder="••••"></div>
+    <div class="field"><label>Ulangi PIN</label><input type="password" inputmode="numeric" id="regPin2" maxlength="6" placeholder="••••"></div>
+    <button class="btn btn-primary" onclick="completeRegister()">Buat Akun</button>
+  </section>
+
+  <!-- RESET PIN -->
+  <section class="screen" data-screen="resetpin">
+    <div class="topbar"><h1>PIN Baru</h1></div>
+    <div id="resetBanner"></div>
+    <div class="field"><label>PIN Baru</label><input type="password" inputmode="numeric" id="newPin" maxlength="6" placeholder="••••"></div>
+    <div class="field"><label>Ulangi PIN Baru</label><input type="password" inputmode="numeric" id="newPin2" maxlength="6" placeholder="••••"></div>
+    <button class="btn btn-primary" onclick="submitResetPin()">Simpan PIN</button>
+  </section>
+
+  <!-- HOME -->
+  <section class="screen" data-screen="home">
+    <div class="topbar" style="justify-content:space-between;"><h1 id="homeGreeting">Halo 👋</h1><span onclick="logout()" style="font-size:13px;color:var(--danger);cursor:pointer;">Keluar</span></div>
+    <div id="homeBanner"></div>
+    <div id="exitApprovalArea"></div>
+    <div class="section-label">Status Parkir</div>
+    <div id="activeSessionArea"><div class="empty">Memuat...</div></div>
+    <div class="section-label">Riwayat Terbaru</div>
+    <div id="historyArea"><div class="empty">Memuat...</div></div>
+  </section>
+
+  <!-- VEHICLES -->
+  <section class="screen" data-screen="vehicles">
+    <div class="topbar"><h1>Kendaraan Saya</h1></div>
+    <div id="vehiclesArea"><div class="empty">Memuat...</div></div>
+    <div class="fab" onclick="go('addvehicle')">+</div>
+  </section>
+
+  <!-- ADD VEHICLE -->
+  <section class="screen" data-screen="addvehicle">
+    <div class="topbar"><button class="back-btn" onclick="go('vehicles')">←</button><h1>Tambah Kendaraan</h1></div>
+    <div id="addVehicleBanner"></div>
+    <div class="field"><label>Jenis Kendaraan</label>
+      <select id="vType">
+        <option value="motorcycle">Motor</option>
+        <option value="car">Mobil</option>
+        <option value="truck">Truk</option>
+        <option value="bus">Bus</option>
+      </select>
+    </div>
+    <div class="field"><label>Plat Nomor</label><input type="text" id="vPlate" placeholder="L 1234 XX" style="text-transform:uppercase;"></div>
+    <div class="field"><label>Merek / Model</label><input type="text" id="vBrand" placeholder="Honda Beat"></div>
+    <div class="field"><label>Warna</label><input type="text" id="vColor" placeholder="Hitam"></div>
+    <div class="field"><label>Nama Pemilik (sesuai STNK)</label><input type="text" id="vOwner" placeholder="Nama pemilik"></div>
+    <div class="field"><label>Foto STNK (opsional)</label><input type="file" id="vStnk" accept="image/*" capture="environment"></div>
+    <button class="btn btn-primary" onclick="addVehicle()">Simpan Kendaraan</button>
+  </section>
+
+  <!-- PROFILE -->
+  <section class="screen" data-screen="profile">
+    <div class="topbar"><h1>Profil</h1></div>
+    <div class="card" id="profileCard"></div>
+    <div class="section-label">Info Sistem</div>
+    <div class="card" id="systemCard"></div>
+    <button class="btn btn-outline" style="margin-top:6px;" onclick="go('vehicles')">Kelola Kendaraan</button>
+    <button class="btn btn-danger" style="margin-top:10px;" onclick="logout()">Keluar Akun</button>
+  </section>
+
+</div>
+
+<div class="bottomnav" id="bottomnav" style="display:none;">
+  <div class="navbtn" data-nav="home" onclick="go('home')"><span class="ic">🏠</span>Beranda</div>
+  <div class="navbtn" data-nav="vehicles" onclick="go('vehicles')"><span class="ic">🚗</span>Kendaraan</div>
+  <div class="navbtn" data-nav="profile" onclick="go('profile')"><span class="ic">👤</span>Profil</div>
+</div>
+
+<script>
+const API = '/api';
+let state = { token: localStorage.getItem('pg_token') || null, user: JSON.parse(localStorage.getItem('pg_user') || 'null') };
+let otpPurpose = 'register';
+let regVerifyToken = null;
+let resetVerifyToken = null;
+let sse = null;
+
+// ---------- navigation ----------
+function go(screen) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelector(`[data-screen="${screen}"]`).classList.add('active');
+  const withNav = ['home', 'vehicles', 'profile'];
+  document.getElementById('bottomnav').style.display = withNav.includes(screen) ? 'flex' : 'none';
+  document.querySelectorAll('.navbtn').forEach(n => n.classList.toggle('active', n.dataset.nav === screen));
+  if (screen === 'home') loadHome();
+  if (screen === 'vehicles') loadVehicles();
+  if (screen === 'profile') loadProfile();
+  if (screen === 'login') updateLoginScreen();
+  window.scrollTo(0, 0);
+}
+
+// Login no longer asks for the phone number by typing it in: the phone
+// entered during registration is remembered on this device, so login is
+// just the PIN. "Ganti nomor" lets a different account sign in on the
+// same device/browser if needed.
+function updateLoginScreen() {
+  const known = localStorage.getItem('pg_last_phone');
+  const knownBox = document.getElementById('loginKnownPhone');
+  const phoneField = document.getElementById('loginPhoneField');
+  const phoneInput = document.getElementById('loginPhone');
+  loginPinBuffer = '';
+  renderDots('loginPinDots', '');
+  if (known) {
+    document.getElementById('loginPhoneDisplay').textContent = known;
+    phoneInput.value = known;
+    knownBox.style.display = 'block';
+    phoneField.style.display = 'none';
+  } else {
+    knownBox.style.display = 'none';
+    phoneField.style.display = 'block';
+    phoneInput.value = '';
+  }
+}
+function switchAccount() {
+  document.getElementById('loginKnownPhone').style.display = 'none';
+  document.getElementById('loginPhoneField').style.display = 'block';
+  document.getElementById('loginPhone').value = '';
+  document.getElementById('loginPhone').focus();
+}
+
+function banner(el, msg, type) {
+  el.innerHTML = msg ? `<div class="banner ${type}">${msg}</div>` : '';
+}
+
+function toast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3200);
+}
+
+async function api(path, opts = {}) {
+  const headers = opts.headers || {};
+  if (!(opts.body instanceof FormData)) headers['Content-Type'] = 'application/json';
+  if (state.token) headers['Authorization'] = 'Bearer ' + state.token;
+  const res = await fetch(API + path, { ...opts, headers });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Terjadi kesalahan.');
+  return data;
+}
+
+function formatRp(n) { return 'Rp' + Number(n || 0).toLocaleString('id-ID'); }
+
+// ---------- OTP boxes: real auto-advance / backspace / paste ----------
+function setupOtpBoxes() {
+  const boxes = [...document.querySelectorAll('#screens-otp, .otp-row .otp-box')];
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const boxes = document.querySelectorAll('.otp-row .otp-box');
+  boxes.forEach((box, i) => {
+    box.addEventListener('input', () => {
+      box.value = box.value.replace(/\D/g, '').slice(0, 1);
+      if (box.value && boxes[i + 1]) boxes[i + 1].focus();
+    });
+    box.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && !box.value && boxes[i - 1]) {
+        boxes[i - 1].focus();
+      }
+    });
+    box.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const digits = (e.clipboardData.getData('text') || '').replace(/\D/g, '').split('');
+      boxes.forEach((b, j) => { b.value = digits[j] || ''; });
+      const next = boxes[Math.min(digits.length, boxes.length - 1)];
+      if (next) next.focus();
+    });
+  });
+
+  // login/create keypads
+  buildKeypad('loginKeypad', 'loginPinDots', onLoginPinComplete);
+  buildKeypad('createKeypad', null, null); // placeholder, PIN uses text inputs for register per design above
+});
+
+function otpValue() {
+  return [...document.querySelectorAll('.otp-row .otp-box')].map(b => b.value).join('');
+}
+function clearOtpBoxes() {
+  document.querySelectorAll('.otp-row .otp-box').forEach(b => b.value = '');
+  const first = document.querySelector('.otp-row .otp-box');
+  if (first) first.focus();
+}
+
+// ---------- login PIN keypad ----------
+let loginPinBuffer = '';
+function buildKeypad(keypadId, dotsId, onComplete) {
+  const el = document.getElementById(keypadId);
+  if (!el) return;
+  el.innerHTML = '';
+  const keys = ['1','2','3','4','5','6','7','8','9','','0','⌫'];
+  keys.forEach(k => {
+    const div = document.createElement('div');
+    div.className = 'key' + (k === '' ? ' ghost' : '');
+    div.textContent = k;
+    if (k !== '') div.onclick = () => handleKeyPress(keypadId, k, dotsId, onComplete);
+    el.appendChild(div);
+  });
+}
+function handleKeyPress(keypadId, k, dotsId, onComplete) {
+  if (keypadId === 'loginKeypad') {
+    if (k === '⌫') loginPinBuffer = loginPinBuffer.slice(0, -1);
+    else if (loginPinBuffer.length < 6) loginPinBuffer += k;
+    renderDots('loginPinDots', loginPinBuffer);
+    if (loginPinBuffer.length >= 4 && onComplete) {
+      // wait for user to hit "done" implicitly at 6 digits, or after short pause for 4-digit PINs
+    }
+  }
+}
+function renderDots(dotsId, buf) {
+  const el = document.getElementById(dotsId);
+  if (!el) return;
+  const len = Math.max(buf.length, 4);
+  el.innerHTML = '';
+  for (let i = 0; i < Math.max(len, 6); i++) {
+    if (i >= 6) break;
+    const s = document.createElement('span');
+    s.className = 'pin-dot' + (i < buf.length ? ' filled' : '');
+    el.appendChild(s);
+  }
+}
+function onLoginPinComplete() {}
+
+document.addEventListener('click', (e) => {
+  if (e.target.closest('#loginKeypad')) {
+    setTimeout(async () => {
+      if (loginPinBuffer.length === 4 || loginPinBuffer.length === 6) {
+        // try login automatically once a plausible PIN length is reached and user pauses
+      }
+    }, 0);
+  }
+});
+
+async function doLogin() {
+  const phone = document.getElementById('loginPhone').value.trim();
+  const pin = loginPinBuffer;
+  const el = document.getElementById('loginBanner');
+  banner(el, '', '');
+  if (!phone || pin.length < 4) { banner(el, 'Isi nomor HP dan PIN lengkap.', 'err'); return; }
+  try {
+    const data = await api('/auth/login', { method: 'POST', body: JSON.stringify({ phone, pin }) });
+    setSession(data.token, data.user);
+    go('home');
+  } catch (err) {
+    banner(el, err.message, 'err');
+    loginPinBuffer = '';
+    renderDots('loginPinDots', '');
+  }
+}
+// trigger login attempt whenever the PIN reaches 4-6 digits
+const _origHandle = handleKeyPress;
+handleKeyPress = function (keypadId, k, dotsId, onComplete) {
+  _origHandle(keypadId, k, dotsId, onComplete);
+  if (keypadId === 'loginKeypad' && (loginPinBuffer.length === 4 || loginPinBuffer.length === 6)) {
+    doLogin();
+  }
+};
+
+function setSession(token, user) {
+  state.token = token; state.user = user;
+  localStorage.setItem('pg_token', token);
+  localStorage.setItem('pg_user', JSON.stringify(user));
+  if (user && user.phone) localStorage.setItem('pg_last_phone', user.phone);
+  connectSSE();
+}
+function logout() {
+  localStorage.removeItem('pg_token'); localStorage.removeItem('pg_user');
+  // pg_last_phone is kept on purpose so the login screen still greets this
+  // device's phone number instead of asking to type it again.
+  state = { token: null, user: null };
+  if (sse) sse.close();
+  loginPinBuffer = ''; renderDots('loginPinDots', '');
+  go('login');
+}
+
+// ---------- register / OTP flow ----------
+function resetRegister() { regVerifyToken = null; document.getElementById('regPhone').value=''; }
+
+async function requestOtp(purpose) {
+  otpPurpose = purpose;
+  const phoneField = purpose === 'register' ? 'regPhone' : 'loginPhone';
+  const phone = document.getElementById(phoneField).value.trim();
+  const bannerEl = document.getElementById(purpose === 'register' ? 'registerBanner' : 'otpBanner');
+  if (!phone) { banner(bannerEl, 'Isi nomor HP dulu.', 'err'); return; }
+  const btn = document.getElementById('regSendBtn');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Mengirim...'; }
+  try {
+    const email = document.getElementById('regEmail') ? document.getElementById('regEmail').value.trim() : undefined;
+    const data = await api('/auth/otp/request', { method: 'POST', body: JSON.stringify({ phone, purpose, email }) });
+    document.getElementById('otpSub').textContent = data.channel === 'email_smtp'
+      ? `Kode verifikasi dikirim ke email kamu.`
+      : data.channel === 'whatsapp_fonnte'
+      ? `Kode verifikasi dikirim lewat WhatsApp ke ${phone}.`
+      : data.channel === 'sms_twilio'
+      ? `Kode verifikasi dikirim lewat SMS ke ${phone}.`
+      : `Mode pengembangan: server belum dihubungkan ke gateway WA/SMS/Email asli.`;
+    clearOtpBoxes();
+    const otpB = document.getElementById('otpBanner');
+    if (data.dev_otp) {
+      banner(otpB, `DEV MODE (belum ada gateway asli) — kode kamu: <b>${data.dev_otp}</b>`, 'warn');
+    } else {
+      banner(otpB, '', '');
+      toast('Kode OTP terkirim.');
+    }
+    go('otp');
+  } catch (err) {
+    banner(bannerEl, err.message, 'err');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Lanjut'; }
+  }
+}
+
+async function verifyOtp() {
+  const phoneField = otpPurpose === 'register' ? 'regPhone' : 'loginPhone';
+  const phone = document.getElementById(phoneField).value.trim();
+  const code = otpValue();
+  const el = document.getElementById('otpBanner');
+  if (code.length < 6) { banner(el, 'Masukkan 6 digit kode OTP.', 'err'); return; }
+  const btn = document.getElementById('otpVerifyBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Memverifikasi...';
+  try {
+    const data = await api('/auth/otp/verify', { method: 'POST', body: JSON.stringify({ phone, code, purpose: otpPurpose }) });
+    if (otpPurpose === 'register') { regVerifyToken = data.verify_token; go('createpin'); }
+    else { resetVerifyToken = data.verify_token; go('resetpin'); }
+  } catch (err) {
+    banner(el, err.message, 'err');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Verifikasi';
+  }
+}
+
+async function completeRegister() {
+  const name = document.getElementById('regName').value.trim();
+  const pin = document.getElementById('regPin').value.trim();
+  const pin2 = document.getElementById('regPin2').value.trim();
+  const el = document.getElementById('createBanner');
+  if (!/^\d{4,6}$/.test(pin)) { banner(el, 'PIN harus 4-6 digit angka.', 'err'); return; }
+  if (pin !== pin2) { banner(el, 'PIN tidak sama.', 'err'); return; }
+  try {
+    const email = document.getElementById('regEmail') ? document.getElementById('regEmail').value.trim() : undefined;
+    const data = await api('/auth/register/complete', { method: 'POST', body: JSON.stringify({ verify_token: regVerifyToken, name, pin, email }) });
+    setSession(data.token, data.user);
+    toast('Akun berhasil dibuat!');
+    go('home');
+  } catch (err) {
+    banner(el, err.message, 'err');
+  }
+}
+
+function startForgotPin() {
+  otpPurpose = 'reset_pin';
+  const phone = document.getElementById('loginPhone').value.trim();
+  if (!phone) { banner(document.getElementById('loginBanner'), 'Isi nomor HP dulu, lalu tekan "Reset PIN".', 'err'); return; }
+  document.getElementById('regPhone').value = phone;
+  requestOtp('reset_pin');
+}
+
+async function submitResetPin() {
+  const pin = document.getElementById('newPin').value.trim();
+  const pin2 = document.getElementById('newPin2').value.trim();
+  const el = document.getElementById('resetBanner');
+  if (!/^\d{4,6}$/.test(pin)) { banner(el, 'PIN harus 4-6 digit angka.', 'err'); return; }
+  if (pin !== pin2) { banner(el, 'PIN tidak sama.', 'err'); return; }
+  try {
+    const data = await api('/auth/pin/reset', { method: 'POST', body: JSON.stringify({ verify_token: resetVerifyToken, pin }) });
+    setSession(data.token, data.user);
+    toast('PIN berhasil diganti.');
+    go('home');
+  } catch (err) {
+    banner(el, err.message, 'err');
+  }
+}
+
+// ---------- home ----------
+async function loadHome() {
+  document.getElementById('homeGreeting').textContent = `Halo, ${state.user?.name || ''} 👋`;
+  const activeEl = document.getElementById('activeSessionArea');
+  const histEl = document.getElementById('historyArea');
+  const exitEl = document.getElementById('exitApprovalArea');
+  try {
+    const [{ sessions: active }, { sessions: all }] = await Promise.all([
+      api('/sessions/active'), api('/sessions'),
+    ]);
+    exitEl.innerHTML = '';
+    active.filter(s => s.status === 'WAITING_FOR_APPROVAL').forEach(s => {
+      exitEl.innerHTML += `
+        <div class="card" style="border-color:var(--amber);">
+          <div style="font-weight:800;margin-bottom:6px;">Permintaan Keluar Parkir</div>
+          <div style="font-size:14px;">${s.brand_model || s.vehicle_type} · ${s.plate}</div>
+          <div style="font-size:13px;color:var(--ink-soft);margin:4px 0 14px;">Gerbang ${s.exit_gate_code}</div>
+          <div style="display:flex;gap:10px;">
+            <button class="btn btn-outline" style="flex:1;" onclick="authorizeExit(${s.id}, false)">Tolak</button>
+            <button class="btn btn-primary" style="flex:1;" onclick="authorizeExit(${s.id}, true)">Izinkan</button>
+          </div>
+        </div>`;
+    });
+    active.filter(s => s.status === 'WAITING_FOR_PAYMENT').forEach(s => {
+      exitEl.innerHTML += `
+        <div class="qris-box" style="margin-bottom:14px;">
+          <div class="qris-fake"></div>
+          <div style="font-weight:800;font-size:17px;">${formatRp(s.amount)}</div>
+          <div style="font-size:12.5px;color:var(--ink-soft);margin-top:6px;">Tunjukkan / scan QRIS ini di gerbang untuk membayar (${s.plate})</div>
+        </div>`;
+    });
+
+    if (active.length === 0) {
+      activeEl.innerHTML = '<div class="empty">Tidak ada kendaraan yang sedang parkir.</div>';
+    } else {
+      activeEl.innerHTML = active.map(s => `
+        <div class="card">
+          <div class="row"><b>${s.brand_model || s.vehicle_type}</b><span class="badge ${badgeClass(s.status)}">${statusLabel(s.status)}</span></div>
+          <div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">${s.plate} · Masuk ${s.entry_gate_code || '-'} ${s.entry_time ? '· ' + s.entry_time.slice(11,16) : ''}</div>
+        </div>`).join('');
+    }
+
+    const done = all.filter(s => s.status === 'EXITED').slice(0, 5);
+    histEl.innerHTML = done.length ? done.map(s => `
+      <div class="card">
+        <div class="row"><b>${s.brand_model || s.vehicle_type}</b><span class="badge done">Selesai</span></div>
+        <div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">${s.plate} · ${s.entry_time ? s.entry_time.slice(0,10) : ''}</div>
+        <div style="font-size:13px;margin-top:6px;">Masuk ${s.entry_time?.slice(11,16)||'-'} → Keluar ${s.exit_time?.slice(11,16)||'-'} · ${formatRp(s.amount)}</div>
+      </div>`).join('') : '<div class="empty">Belum ada riwayat parkir.</div>';
+  } catch (err) {
+    activeEl.innerHTML = ''; histEl.innerHTML = '';
+    banner(document.getElementById('homeBanner'), err.message, 'err');
+  }
+}
+function badgeClass(s){ return s==='PARKED'?'parked':(s==='WAITING_FOR_APPROVAL'?'wait':(s==='WAITING_FOR_PAYMENT'?'pay':'done')); }
+function statusLabel(s){ return {PARKED:'Parkir',WAITING_FOR_APPROVAL:'Menunggu Persetujuan',WAITING_FOR_PAYMENT:'Menunggu Pembayaran',EXITED:'Selesai'}[s]||s; }
+
+async function authorizeExit(id, approve) {
+  try {
+    await api(`/sessions/${id}/authorize`, { method: 'POST', body: JSON.stringify({ approve }) });
+    toast(approve ? 'Keluar diizinkan.' : 'Permintaan keluar ditolak.');
+    loadHome();
+  } catch (err) { toast(err.message); }
+}
+
+// ---------- vehicles ----------
+async function loadVehicles() {
+  const el = document.getElementById('vehiclesArea');
+  try {
+    const { vehicles } = await api('/vehicles');
+    el.innerHTML = vehicles.length ? vehicles.map(v => `
+      <div class="card">
+        <div class="row"><b>${v.brand_model || vTypeLabel(v.vehicle_type)}</b><span style="font-size:12px;color:var(--ink-soft);">${vTypeLabel(v.vehicle_type)}</span></div>
+        <div style="font-size:15px;font-weight:700;margin-top:4px;letter-spacing:.03em;">${v.plate}</div>
+        ${v.stnk_photo_path ? `<img src="${v.stnk_photo_path}" style="width:100%;border-radius:10px;margin-top:10px;">` : ''}
+        <button class="btn btn-outline" style="margin-top:12px;" onclick="deleteVehicle(${v.id})">Hapus</button>
+      </div>`).join('') : '<div class="empty">Belum ada kendaraan terdaftar. Tekan + untuk menambah.</div>';
+  } catch (err) { el.innerHTML = `<div class="banner err">${err.message}</div>`; }
+}
+function vTypeLabel(t){ return {motorcycle:'Motor',car:'Mobil',truck:'Truk',bus:'Bus'}[t]||t; }
+
+async function addVehicle() {
+  const el = document.getElementById('addVehicleBanner');
+  const fd = new FormData();
+  fd.append('vehicle_type', document.getElementById('vType').value);
+  fd.append('plate', document.getElementById('vPlate').value.trim());
+  fd.append('brand_model', document.getElementById('vBrand').value.trim());
+  fd.append('color', document.getElementById('vColor').value.trim());
+  fd.append('owner_name', document.getElementById('vOwner').value.trim());
+  const file = document.getElementById('vStnk').files[0];
+  if (file) fd.append('stnk_photo', file);
+  try {
+    await api('/vehicles', { method: 'POST', body: fd });
+    toast('Kendaraan ditambahkan.');
+    go('vehicles');
+  } catch (err) { banner(el, err.message, 'err'); }
+}
+
+async function deleteVehicle(id) {
+  if (!confirm('Hapus kendaraan ini?')) return;
+  try { await api(`/vehicles/${id}`, { method: 'DELETE' }); loadVehicles(); }
+  catch (err) { toast(err.message); }
+}
+
+// ---------- profile ----------
+async function loadProfile() {
+  document.getElementById('profileCard').innerHTML = `
+    <div style="font-size:17px;font-weight:800;">${state.user?.name || '-'}</div>
+    <div style="color:var(--ink-soft);font-size:14px;margin-top:4px;">${state.user?.phone || '-'}</div>
+    ${state.user?.email ? `<div style="color:var(--ink-soft);font-size:14px;">${state.user.email}</div>` : ''}
+  `;
+  try {
+    const { channel } = await api('/auth/channel-info');
+    const labels = { whatsapp_fonnte: 'WhatsApp (Fonnte)', sms_twilio: 'SMS (Twilio)', email_smtp: 'Email (SMTP)', dev_console: 'Mode pengembangan (belum aktif)' };
+    document.getElementById('systemCard').innerHTML = `<div style="font-size:13.5px;">Jalur pengiriman OTP aktif: <b>${labels[channel] || channel}</b></div>`;
+  } catch { document.getElementById('systemCard').innerHTML = ''; }
+}
+
+// ---------- real-time notifications ----------
+function connectSSE() {
+  if (!state.token) return;
+  if (sse) sse.close();
+  sse = new EventSource(`${API}/sessions/stream?token=${encodeURIComponent(state.token)}`);
+  sse.addEventListener('exit_request', (e) => {
+    toast('Ada permintaan keluar parkir untuk kendaraanmu.');
+    if (document.querySelector('[data-screen="home"]').classList.contains('active')) loadHome();
+  });
+  sse.addEventListener('session_update', () => {
+    if (document.querySelector('[data-screen="home"]').classList.contains('active')) loadHome();
+  });
+}
+
+// ---------- boot ----------
+if (state.token && state.user) {
+  connectSSE();
+  window.addEventListener('DOMContentLoaded', () => go('home'));
+} else {
+  window.addEventListener('DOMContentLoaded', () => go('login'));
+}
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
